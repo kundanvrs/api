@@ -1,0 +1,157 @@
+*****************IMPORTS*********************
+
+import requests
+import json
+from requests.auth import HTTPBasicAuthfrom 
+jira.client import JIRA
+---------------------------------------------
+jira => a connection name
+jiraissue => a single issue
+completeissueanalysis => a string having comment
+
+ESTABLISH CONNECTION WITH JIRA API********************************************************
+try:
+	options = {'server': 'https://organisation.domain.com/'}
+	jira = JIRA(options, basic_auth=(username, password))
+except:
+	print("error",jira)
+
+
+
+FETCH DETAILS FROM JIRA ******************************************************************
+
+@ Project Details
+-----------------
+total_projects = jira.projects()
+project_details = jira.project('project_key')
+
+@ Fetch Jira Issue
+------------------
+issue = jira.issue('ISSUE-KEY', fields='summary,comment')
+print(issue.fields.summary)
+
+@ Issue search using
+--------------------
+issues_in_proj = jira.search_issues('project=PROJ')
+all_proj_issues_but_mine = jira.search_issues('project=PROJ and assignee != currentUser()')
+issues = jira.search_issues("assignee=xxxxxyyy")
+issues = jira.search_issues("reporter=xxxxxyyy")
+
+# Summaries of my last 3 reported issues
+for issue in jira.search_issues('reporter = currentUser() order by created desc', maxResults=3):
+    print('{}: {}'.format(issue.key, issue.fields.summary))
+
+# my top 5 issues due by the end of the week, ordered by priority
+result = jira.search_issues('assignee = currentUser() and due < endOfWeek() order by priority desc', maxResults=5)
+
+@ Fetch comments
+----------------
+# It will return comment id
+comments_a = issue.fields.comment.comments 
+comments_b = jira.comments(issue)
+
+@ Fetch Watchers
+----------------
+# watcher is instance of jira.resources.User:
+watcher = jira.watchers(jiraissue)
+print("Issue has {} watcher(s)".format(watcher.watchCount))
+for watcher in watcher.watchers:
+    print(watcher)
+    print(watcher.emailAddress)
+
+
+
+UPDATE DETAILS ON JIRA *******************************************************************
+
+@ Add comment to Jira issue
+---------------------------
+jira.add_comment(jiraissue, completeissueanalysis, is_internal=True)
+
+@ Add labels to jira issue
+--------------------------
+
+for label in collectedlabels:
+    jiraissue.fields.labels.append(label)
+
+jiraissue.update(fields={"labels": jiraissue.fields.labels})
+
+@ Assign Jira Issue
+-------------------
+jira.assign_issue(jiraissue, 'username')
+
+@ Add/Remove Watchers
+---------------------
+jira.add_watcher(jiraissue, 'username')
+jira.add_watcher(jiraissue, user_resource.name)
+
+jira.remove_watcher(jiraissue, 'username')
+jira.remove_watcher(jiraissue, user_resource.name)
+
+CREATE JIRA ISSUE ***********************************************************************
+
+new_issue = jira.create_issue(project='PROJ_key_or_id', summary='New issue from jira-python',
+                                description='Look into this one', issuetype={'name': 'Bug'})
+
+# Issue creation using dictonary
+issue_dict = {
+    'project': {'id': 123},
+    'summary': 'New issue from jira-python',
+    'description': 'Look into this one',
+    'issuetype': {'name': 'Bug'},
+     }
+new_issue = jira.create_issue(fields=issue_dict)
+
+JQL QUERY ********************************************************************************
+
+jql = 'project = "JIRA PRO" AND text ~ "%s" AND status in (Resolved,Closed)'\
+	      ' AND assignee is not EMPTY'%(keyword_search)    
+
+query = 'https://organisation.domain.com/rest/api/2/search?jql=(%s)'\
+        '&fields=id,key,labels,description,customfield_18014,reporter,summary' % (
+                jql)
+
+r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))  #Query request
+      
+issues = r.json()  #issues /search result store in issues (in JSON format)     
+r.close() 
+
+
+
+=================================EXAMPLES====================================================
+
+def main():
+    jsonDict = {}
+    keyword_search = "vdi not working"  
+  
+	jql = 'project = "JIRA PRO" AND text ~ "%s" AND status in (Resolved,Closed)'\
+	      ' AND assignee is not EMPTY'%(keyword_search)    
+	query = 'https://organisation.domain.com/rest/api/2/search?jql=(%s)'\
+	        '&fields=assignee'%(jql)    
+	try:
+	   uname = 'xxxxxx'
+	   pwd = 'yyyyyzzzz'   
+	     
+	   r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))        
+	   jsondata = r.json()        
+	   r.close()        
+	   #print(json.dumps(jsondata, indent=4))                
+	   jsonStr = json.dumps(jsondata)        
+	   jsonDict = json.loads(jsonStr)  
+	                 
+	   count = 0        
+	   for i in jsonDict['issues']:
+	       count =count + 1        
+	   print("total Analysed issues :",count)   
+	        
+	   maxAssigned = []        
+	   for issue in range(0,count):     
+	       assigneeName = jsonDict['issues'][issue]['fields']['assignee']['displayName']            
+	       maxAssigned.append(assigneeName)       
+	       assigneeName = max(set(maxAssigned), key = maxAssigned.count)        
+	       print("Maximum frequency of Assignee : ",assigneeName)        
+	       print("Total number of assigned issue :",maxAssigned.count(assigneeName))       
+	except:
+	      print('error')
+
+if __name__ == '__main__':
+    main()
