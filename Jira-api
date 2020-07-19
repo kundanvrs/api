@@ -103,7 +103,7 @@ new_issue = jira.create_issue(fields=issue_dict)
 
 JQL QUERY ********************************************************************************
 
-jql = 'project = "JIRA PRO" AND text ~ "%s" AND status in (Resolved,Closed)'\
+jql = 'project = "PROJ" AND text ~ "%s" AND status in (Resolved,Closed)'\
 	      ' AND assignee is not EMPTY'%(keyword_search)    
 
 query = 'https://organisation.domain.com/rest/api/2/search?jql=(%s)'\
