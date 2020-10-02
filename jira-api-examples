@@ -1,0 +1,276 @@
+EXAMPLES 
+
+import requests
+from requests.auth import HTTPBasicAuth
+from jira.client import JIRA
+from authenticator import auth_jira
+import json
+from jira_filter import jira_issues
+
+
+def main():
+    try:
+        jira = auth_jira()
+        dummy_A =[]
+        key_list = jira_issues()
+        print("######### Collecting Dummy A Prior Tickets #########\n")
+        for issue_key in key_list:
+            issue = jira.issue(issue_key, expand='changelog')
+            changelog = issue.changelog
+            for history in changelog.histories:
+                for item in history.items:
+                    if item.field == "priority":
+                        #print(issue,'Date:'+history.created + ' From : ' + item.fromString + ' To :'+ item.toString)
+                        if(item.fromString=='A' and item.toString in ('B','C','D')):
+                            dummy_A.append(issue.key)
+
+        print('Dummy A Prior Issues : ',dummy_A,"\n")
+    except:
+        print('error',issue)
+
+if __name__ == '__main__':
+    main()
+
+===============================================================================
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+from jira.client import JIRA
+from GlobalData import Gd
+
+
+def dummy_A_prior():
+    print("## Enter a date, upto you want to check ##")
+    date = input('!! Date format must be in [YYYY-MM-DD] !!\n')
+   
+    date = '2020-10-01'
+    jql = 'project = "DNEW E3" AND createdDate >= %s AND status in (Resolved,Closed)'%(date)
+    query = 'https://project.internal.domain.com/rest/api/2/search?jql=(%s)'\
+            '&expand=changelog&maxResults=1000'%(jql)
+    try:
+        uname = Gd.JIRA_USERNAME
+        pwd = Gd.JIRA_PASSWORD
+
+        prior_list = []
+        r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))
+        jsondata = r.json()
+        r.close()
+
+        print('\n########### Searching For Dummy A Prior ############\n')
+        #print(json.dumps(jsondata['issues'][0]['changelog']['histories'],indent=4))
+        #print(json.dumps(jsondata['issues'][0]['changelog']['histories'][1]['items'][0]['field'], indent=4))
+        for issue in jsondata['issues']:  
+            Histories = issue['changelog']['histories']
+            for history in Histories:
+                items = history['items'][0]
+                if(items['field']=='priority'):
+                    if(items['fromString'] == 'A' and items['toString'] in ('B','C','D')):
+                        #print(items['fromString'])
+                        #print(items['toString'])
+                        print(issue['key'],'  FROM :',items['fromString'],' TO : ',items['toString'],)
+                        prior_list.append(issue['key'])
+        print('\nDummy A priors :',prior_list,'\n')
+    except:
+        print("Error : Please Enter Valid Issue Key / Issue Key not matched\n")
+       
+
+dummy_A_prior()
+=======================================================================
+class Gd:
+    END_LINE = '\n'
+    BOLD = '*'
+    END = '*'
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    UNDERLINE = '\033[4m'
+    SPACE = ' '
+    PRODENV = 'prod'
+    TESTENV = 'test'
+    PRODJIRAPROJ = 'XYZ'
+    TESTJIRAPROJ = 'XYZ'
+    JIRA_USERNAME ='XXXXXXXXX'
+    JIRA_PASSWORD ='YYYYYYYYY'
+    ====================================================================
+import requests
+from requests.auth import HTTPBasicAuth
+from jira.client import JIRA
+
+
+def auth_jira():
+    uname = "XXXXXXXXX"
+    pwd='YYYYYYYYY'
+    try:
+        options = {'server': 'https://project.internal.domain.com/'}
+        passcode = JIRA(options, basic_auth=(uname, pwd))
+        return passcode
+    except:
+        print("Issue in authentication / inter valid id|pass :"+passcode)
+
+====================================================================
+import requests
+from requests.auth import HTTPBasicAuth
+from jira.client import JIRA
+import re
+from authenticator import auth_jira
+
+
+
+def main():
+    try:
+        #jira = auth_jira()
+
+        issue_pkt = issue_input()
+        new_issue = jira.create_issue(fields=issue_pkt)
+        print("issue created in XYZ successfully",new_issue)
+        #print(issue_pkt)
+        #projects = jira.projects()
+        #print(projects)
+
+    except:
+        print("Error in issue creation :",new_issue)
+
+def issue_input():
+    """
+    print("")
+    print("###### You are creating a issue in XYZ #########")
+    print("")
+
+    print("Enter summary for issue :")
+    summ = input()
+    print("Enter discription for the issue :")
+    discri = input()
+    print("Enter issuetype name  '1' for Incident '2' for task :")
+    issutyp_verify = input()
+    if (issutyp_verify=='1'):
+        issutyp = 'Incident'
+    else:
+        issutyp = 'task'
+"""
+    issue_dict = {
+    'project': {'key': 'XYZ'},
+    'summary': 'Testing Creation',
+    'description': 'Test automatic ticket creation',
+    'issuetype': {'name': 'Incident'},
+    'customfield_12650':{'value':'PDU Radio'},
+    'customfield_14418' : {'value':'Hungary (GMT/UTC + 01:00 hour)'}
+    }
+
+    return issue_dict
+
+
+
+if __name__ == '__main__':
+    main()
+============================================
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+from jira.client import JIRA
+import re
+from GlobalData import Gd
+from authenticator import auth_jira
+
+def main():
+
+    print("\nSearch Partition/string/hostname/keyword")
+    #partition = input()
+    partition = "vdi"
+
+    jql = 'project = "DNEW E3" AND text ~ %s AND status in (Resolved,Closed)'\
+          ' AND assignee is not EMPTY'%(partition)
+
+    query = 'https://project.internal.domain.com/rest/api/2/search?jql=(%s)'\
+            '&fields=assignee'%(jql)
+    try:
+        uname = Gd.JIRA_USERNAME
+        pwd = Gd.JIRA_PASSWORD
+
+
+        r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))
+        jsondata = r.json()
+        r.close()
+
+        #print(json.dumps(jsondata, indent=4))
+        count = 0
+        issues = jsondata['issues']
+        #print(issues)
+        maxAssigned = []
+        for issue in issues:
+            assigneeName = issue['fields']['assignee']['displayName']
+            maxAssigned.append(assigneeName)
+            count = count+1
+        assigneeName = max(set(maxAssigned), key = maxAssigned.count)
+        print("Maximum frequency of Assignee : ",assigneeName)
+        print("Total number of assigned issue :",maxAssigned.count(assigneeName),"out of",count,"issues")
+
+   
+    except:
+        print("Error : Please Enter Valid string / String not matched with any issue \n")
+       
+
+
+
+if __name__ == '__main__':
+    main()
+
+================================================================================
+import requests
+import json
+from requests.auth import HTTPBasicAuth
+from jira.client import JIRA
+from GlobalData import Gd
+
+
+def fetch_issue():
+
+    print("\nEnter Issue Key :")
+    #issue_key = input()
+    issue_key = "XYZ-116090"
+    jql = 'issue = "%s"'%(issue_key)
+    #print(jql)
+
+    query = 'https://project.internal.domain.com/rest/api/2/search?jql=(%s)'\
+            '&fields=id,key,labels,description,customfield_18014,reporter,summary,assignee'%(jql)
+    try:
+        uname = Gd.JIRA_USERNAME
+        pwd = Gd.JIRA_PASSWORD
+
+
+        r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))
+        jsondata = r.json()
+        r.close()
+
+        #print(json.dumps(jsondata, indent=4))
+
+    except:
+        print("Error : Please Enter Valid Issue Key / Issue Key not matched\n")
+       
+    return jsondata
+
+==============================================================
+#!/bin/bash
+user=$USER
+dir_path='/local/'$user'/venvs'
+venv_path=$dir_path'/proj_templates'
+py_afs_module='/app/vbuild/RHEL7-x86_64/python/3.6.0/bin/python3.6'
+if [ ! -d $venv_path ];
+then
+    echo "Creating venv for proj_templates...."
+    mkdir -p $dir_path
+    cd $dir_path
+    $py_afs_module -m venv proj_templates
+else
+    echo "virtual env for proj_templates exists"
+fi
+
+echo "Further actions:
+source $venv_path/bin/activate
+pip install -r requirement.txt"
+
+
+========================================
