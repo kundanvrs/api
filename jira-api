@@ -10,11 +10,22 @@ jiraissue => a single issue
 completeissueanalysis => a string having comment
 
 ESTABLISH CONNECTION WITH JIRA API********************************************************
+@ TYPE 1
 try:
 	options = {'server': 'https://organisation.domain.com/'}
 	jira = JIRA(options, basic_auth=(username, password))
 except:
 	print("error",jira)
+
+@ TYPE 2
+try:
+        r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))
+        jsondata = r.json()
+        r.close()
+except:
+        print("error",jsondata)
+
+
 
 
 
@@ -102,7 +113,7 @@ issue_dict = {
 new_issue = jira.create_issue(fields=issue_dict)
 
 JQL QUERY ********************************************************************************
-
+#EXAMPLE 1------------------------------------------
 jql = 'project = "PROJ" AND text ~ "%s" AND status in (Resolved,Closed)'\
 	      ' AND assignee is not EMPTY'%(keyword_search)    
 
@@ -114,6 +125,20 @@ r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))  #Query request
       
 issues = r.json()  #issues /search result store in issues (in JSON format)     
 r.close() 
+
+#EXAMPLE 2 -----------------------------------------------------
+jql = 'project = "PROJ" AND createdDate >= %s AND status in (Resolved,Closed)'%(date)
+query = 'https://project.internal.domain.com/rest/api/2/search?jql=(%s)'\
+            '&expand=changelog&maxResults=1000'%(jql)
+    try:
+        uname = Gd.JIRA_USERNAME
+        pwd = Gd.JIRA_PASSWORD
+
+        prior_list = []
+        r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))
+        jsondata = r.json()
+        r.close()
+
 
 
 
