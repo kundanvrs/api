@@ -27,8 +27,6 @@ except:
 
 
 
-
-
 FETCH DETAILS FROM JIRA ******************************************************************
 
 @ Project Details
@@ -40,6 +38,17 @@ project_details = jira.project('project_key')
 ------------------
 issue = jira.issue('ISSUE-KEY', fields='summary,comment')
 print(issue.fields.summary)
+
+issue = jira.issue(issue_key, expand='changelog')
+changelog = issue.changelog
+for history in changelog.histories:
+    for item in history.items:
+        if item.field == "priority":
+
+query =>rest api query
+r = requests.get(query, auth=HTTPBasicAuth(uname, pwd))
+jsondata = r.json()
+
 
 @ Issue search using
 --------------------
