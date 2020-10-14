@@ -138,7 +138,7 @@ r.close() 
 #EXAMPLE 2 -----------------------------------------------------
 jql = 'project = "PROJ" AND createdDate >= %s AND status in (Resolved,Closed)'%(date)
 query = 'https://project.internal.domain.com/rest/api/2/search?jql=(%s)'\
-            '&expand=changelog&maxResults=1000'%(jql)
+            '&expand=changelog&maxResults=1000&startAt=0'%(jql)
     try:
         uname = Gd.JIRA_USERNAME
         pwd = Gd.JIRA_PASSWORD
